@@ -77,6 +77,48 @@ app.post('/api/miniapp/login', async (req, res) => {
   }
 });
 
+app.post('/api/dga/send-notification', async (req, res) => {
+  
+  const { token, userId, message } = req.body;
+  if (!token || !userId || !message) {
+    return res.status(400).json({ message: "กรุณาส่ง token, userId, และ message" });
+  }
+
+  const baseApiEnv = process.env.BASE_API_ENV;
+  const consumerKey = process.env.CONSUMER_KEY;
+  const appId = process.env.T_APP_ID; 
+
+  const pushUrl = `${baseApiEnv}/v1/core/notification/push`;
+  
+  const headers = {
+    'Consumer-Key': consumerKey,
+    'Content-Type': 'application/json',
+    'Token': token
+  };
+
+  // --- ⭐️ ส่วนที่แก้ไข ตาม Specification ⭐️ ---
+  const body = {
+    "appId": appId, // 👈 1. แก้เป็น 'a' ตัวเล็ก
+    "data": [       // 👈 2. แก้เป็น 'd' ตัวเล็ก และเป็น Array
+      {
+        "message": message, // 👈 3. แก้เป็น 'm' ตัวเล็ก
+        "userId": userId    // 👈 4. แก้เป็น 'u' ตัวเล็ก
+      }
+    ]
+    // "sendDateTime": null // (ถ้าไม่ใส่ = ส่งทันที)
+  };
+  // ------------------------------------------
+
+  console.log("กำลังเรียก DGA /notification/push API (แก้ไขแล้ว)...");
+
+  try {
+    const response = await axios.post(pushUrl, body, { headers: headers });
+    res.json(response.data);
+  } catch (error) {
+    console.error("เรียก DGA Push API ไม่สำเร็จ!", error.response?.data || error.message);
+    res.status(500).json({ message: "เรียก DGA Push API ไม่สำเร็จ" });
+  }
+});
 
 // (app.listen อยู่ล่างสุด)
 app.listen(port, () => {

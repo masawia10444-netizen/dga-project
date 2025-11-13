@@ -10,4 +10,12 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    port: 5173,
+    allowedHosts: ['czp-staging.biza.me'],
+
+    watch: {
+        usePolling: true,
+    }
+  }
 })

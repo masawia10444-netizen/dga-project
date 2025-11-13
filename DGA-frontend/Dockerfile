@@ -3,13 +3,18 @@ FROM node:20
 
 WORKDIR /usr/src/app
 
+# บังคับใช้ registry ปกติ
+RUN npm config set registry https://registry.npmjs.org/
+
+# อัปเดต npm (แก้บั๊ก npm 10.x ที่เจอ cancel)
+RUN npm install -g npm@latest
+
 COPY package*.json ./
-RUN npm install
+
+# ใช้ --force เพื่อข้าม dependency conflict
+RUN npm install --force
 
 COPY . .
 
-# Expose port ของ Vite
 EXPOSE 5173
-
-# สั่งให้ Vite รันและยอมรับการเชื่อมต่อจากภายนอก
-CMD [ "npm", "run", "dev", "--", "--host" ]
+CMD ["npm", "run", "dev", "--", "--host"]

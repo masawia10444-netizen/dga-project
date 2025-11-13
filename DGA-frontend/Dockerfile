@@ -1,20 +1,28 @@
-# 2. Front-end Dockerfile
-FROM node:20
+# --- DGA-frontend/Dockerfile ---
 
+# 1. "Build Stage" - สร้างไฟล์ Production
+FROM node:18-alpine AS builder
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install
+COPY . .
+# ⭐️ นี่คือคำสั่ง "Build" มันจะอ่าน vite.config.js (base: '/test5/')
+# แล้วสร้างไฟล์นิ่งๆ (static) ไว้ในโฟลเดอร์ /dist
+RUN npm run build
+
+# 2. "Serve Stage" - ใช้เซิร์ฟเวอร์ขนาดเล็กเสิร์ฟไฟล์ที่สร้าง
+FROM node:18-alpine
 WORKDIR /usr/src/app
 
-# บังคับใช้ registry ปกติ
-RUN npm config set registry https://registry.npmjs.org/
+# Copy ไฟล์ที่ Build เสร็จแล้ว (จาก Stage 1) มาใส่
+COPY --from=builder /usr/src/app/dist ./dist
 
-# อัปเดต npm (แก้บั๊ก npm 10.x ที่เจอ cancel)
-RUN npm install -g npm@latest
+# ติดตั้ง "serve" - เซิร์ฟเวอร์ไฟล์นิ่งที่เบาและเสถียร
+RUN npm install -g serve
 
-COPY package*.json ./
+# เปิด Port 3000 (Port มาตรฐานของ 'serve')
+EXPOSE 3000
 
-# ใช้ --force เพื่อข้าม dependency conflict
-RUN npm install --force
-
-COPY . .
-
-EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host"]
+# ⭐️ สั่งให้ 'serve' รันโฟลเดอร์ 'dist'
+# (-s คือ Single-Page App mode)
+CMD [ "serve", "-s", "dist", "-l", "3000" ]

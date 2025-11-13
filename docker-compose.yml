@@ -1,28 +1,32 @@
+version: '3.8'
 
 services:
-  # 1. บริการ Back-end
+  # 1. บริการ Back-end (เหมือนเดิม แต่เอา working_dir ออก)
   backend:
     build: ./DGA-back
     command: npm run dev
-    working_dir: /usr/src/app
     volumes:
       - ./DGA-back:/usr/src/app
       - /usr/src/app/node_modules
     env_file:
       - ./DGA-back/.env
     ports:
-      - "1040:1040"
+      - "1040:1040" # 👈 Port จาก .env ของคุณ
     environment:
       - NODE_ENV=development
 
-  # 2. บริการ Front-end
+  # 2. บริการ Front-end (แก้ไขสำหรับ Production)
   frontend:
-    build: ./DGA-frontend
-    working_dir: /usr/src/app
-    volumes:
-      - ./DGA-frontend:/usr/src/app
-      - /usr/src/app/node_modules
+    build: ./DGA-frontend # 👈 นี่จะรัน Dockerfile ใหม่ (npm run build)
+    
+    # ‼️ ไม่ต้องใช้ 'volumes' แล้ว ‼️
+    # (เพราะเราจะใช้ไฟล์ที่ Build "ข้างใน" Image)
+    
+    # ‼️ ไม่ต้องใช้ 'command' ‼️
+    # (เพราะ 'Dockerfile' มี CMD ["serve", ...] อยู่แล้ว)
+
     ports:
-      - "5173:5173"
+      - "8080:3000" # 👈 (Host Port:Container Port)
+    
     depends_on:
       - backend

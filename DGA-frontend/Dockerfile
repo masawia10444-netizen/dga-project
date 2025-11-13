@@ -1,5 +1,5 @@
 # 2. Front-end Dockerfile
-FROM node:18-alpine
+FROM node:20
 
 WORKDIR /usr/src/app
 

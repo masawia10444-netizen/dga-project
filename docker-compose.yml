@@ -3,24 +3,28 @@ version: '3.8'
 services:
   # 1. บริการ Back-end
   backend:
-    build: ./DGA - back  # 👈 ชี้ไปที่โฟลเดอร์ Back-end
-    command: npm run dev  # 👈 สั่งให้ใช้ nodemon
+    build: ./DGA-back
+    command: npm run dev
+    working_dir: /usr/src/app
     volumes:
-      - ./DGA - back:/usr/src/app  # 👈 เชื่อมโค้ดจริงเข้ากับ Container (แก้โค้ดแล้วรีสตาร์ทเลย)
-      - /usr/src/app/node_modules # 👈 ไม่ sync node_modules (ใช้ของใน Container)
+      - ./DGA-back:/usr/src/app
+      - /usr/src/app/node_modules
     env_file:
-      - ./DGA - back/.env # 👈 "ฉีด" .env เข้าไป
+      - ./DGA-back/.env
     ports:
-      - "1040:1040" # 👈 เชื่อมพอร์ต (Host:Container)
-    # ‼️ สำคัญ: ตรวจสอบ port ใน .env และ App.jsx ของคุณ ‼️
-    # ถ้า .env ใช้ PORT=1040, ตรงนี้ต้องเป็น "1040:1040"
-    # และ App.jsx ต้องเรียก http://localhost:1040
+      - "1040:1040"
+    environment:
+      - NODE_ENV=development
 
   # 2. บริการ Front-end
   frontend:
-    build: ./DGA - Test Project # 👈 ชี้ไปที่โฟลเดอร์ Front-end
+    build: ./DGA-frontend
+    command: npm run dev
+    working_dir: /usr/src/app
     volumes:
-      - ./DGA - Test Project:/usr/src/app
+      - ./DGA-frontend:/usr/src/app
       - /usr/src/app/node_modules
     ports:
-      - "5173:5173" # 👈 เชื่อมพอร์ต Vite
+      - "5173:5173"
+    depends_on:
+      - backend

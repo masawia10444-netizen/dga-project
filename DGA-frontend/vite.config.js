@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+
 export default defineConfig({
+  base: '/test5/',
   plugins: [
     react({
       babel: {
@@ -10,6 +11,8 @@ export default defineConfig({
       },
     }),
   ],
+
+  // (ส่วน server ของคุณ OK แล้วครับ เก็บไว้ได้)
   server: {
     port: 5173,
     allowedHosts: ['czp-staging.biza.me'],

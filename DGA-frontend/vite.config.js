@@ -11,6 +11,9 @@ export default defineConfig({
       },
     }),
   ],
+  
+  // ⭐️ เพิ่มบรรทัดนี้เพื่อบังคับอัปเดต ⭐️
+// LAST UPDATE 14-NOV
 
   // (ส่วน server ของคุณ OK แล้วครับ เก็บไว้ได้)
   server: {

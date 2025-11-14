@@ -2,18 +2,22 @@ import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
 import axios from 'axios';
-// import cors from 'cors'; // ไม่จำเป็นต้องใช้แล้ว
-import path from 'path'; // ⭐️ 1. Import 'path'
-import { fileURLToPath } from 'url'; // ⭐️ 2. Import 'fileURLToPath'
-
-// --- ⭐️ 3. ตั้งค่า __dirname สำหรับ ES Modules ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import cors from 'cors'; // ⭐️ เปิดกลับมาใช้
+// ⭐️ ไม่ต้องใช้ path หรือ fileURLToPath แล้ว
+// import path from 'path'; 
+// import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 1040;
 
 // --- Middleware ---
+// ⭐️⭐️ เปิด CORS ⭐️⭐️
+// เพื่ออนุญาตให้ Frontend (ที่ Port 80) เรียกหา Backend (ที่ Port 1040)
+app.use(cors({
+  origin: true, // หรือระบุ Domain จริง เช่น 'https://czp-staging.biza.me'
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key',
@@ -26,13 +30,11 @@ app.use(session({
   }
 }));
 
-// --- ⭐️ 4. Serve Frontend (React) ---
-// บอก Express ให้เสิร์ฟไฟล์ Static (เช่น CSS, JS) จากโฟลเดอร์ 'public'
-app.use(express.static(path.join(__dirname, 'public')));
+// --- ⭐️ ไม่ต้องมี Serve Frontend (React) แล้ว ---
+// app.use(express.static(path.join(__dirname, 'public')));
 
-// --- ⭐️ 5. ย้าย API ทั้งหมดไปอยู่ใต้ /api ---
 
-// --- 5a. ฟังก์ชันขอ Token (สำหรับ Notification) ---
+// --- 1. ฟังก์ชันขอ Token (สำหรับ Notification) ---
 let cachedDgaToken = null;
 let tokenExpiryTime = 0;
 
@@ -75,7 +77,7 @@ async function getDgaToken() {
   }
 }
 
-// --- 5b. ฟังก์ชันส่ง Notification ---
+// --- 2. ฟังก์ชันส่ง Notification ---
 async function sendDgaNotification(notifications, sendDateTime = null) {
   const {
     DGA_NOTI_API_URL,
@@ -124,9 +126,9 @@ async function sendDgaNotification(notifications, sendDateTime = null) {
   }
 }
 
-// --- 5c. Endpoints ของ API ---
+// --- 3. Endpoints ของ API (⭐️ ไม่มี /api ⭐️) ---
 
-app.post('/api/profile/login', async (req, res) => { // ⭐️ เพิ่ม /api
+app.post('/profile/login', async (req, res) => {
   const { appId, mToken } = req.body;
   if (!appId || !mToken) {
     return res.status(400).json({ error: 'AppID and mToken are required.' });
@@ -143,7 +145,7 @@ app.post('/api/profile/login', async (req, res) => { // ⭐️ เพิ่ม /
   }
 });
 
-app.get('/api/get-user-data', (req, res) => { // ⭐️ เพิ่ม /api
+app.get('/get-user-data', async (req, res) => { // ⭐️ ชื่อ Endpoint ผิด ต้องเป็น /get-user-data
   if (req.session.user) {
     res.json(req.session.user);
   } else {
@@ -151,7 +153,7 @@ app.get('/api/get-user-data', (req, res) => { // ⭐️ เพิ่ม /api
   }
 });
 
-app.post('/api/send-single-noti', async (req, res) => { // ⭐️ เพิ่ม /api
+app.post('/send-single-noti', async (req, res) => {
   try {
     const { userId, message } = req.body;
     const notifications = [{ message: message, userId: userId }];
@@ -162,7 +164,7 @@ app.post('/api/send-single-noti', async (req, res) => { // ⭐️ เพิ่�
   }
 });
 
-app.post('/api/send-monthly-report-noti', async (req, res) => { // ⭐️ เพิ่ม /api
+app.post('/send-monthly-report-noti', async (req, res) => {
   try {
     const allUserIds = ["user-id-001", "user-id-002", "user-id-003"]; // (สมมติ)
     const notifications = allUserIds.map(uid => ({
@@ -177,15 +179,14 @@ app.post('/api/send-monthly-report-noti', async (req, res) => { // ⭐️ เพ
   }
 });
 
-// --- ⭐️ 6. Catch-All Route (สำหรับ React Router) ---
-// ถ้า Request ไม่ตรงกับ /api ไหนเลย ให้ส่ง 'index.html' กลับไป
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// --- ⭐️ ไม่ต้องมี Catch-All Route แล้ว ---
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
 // --- Start Server ---
 app.listen(PORT, () => {
-  console.log(`Server (Backend + Frontend) is running on http://localhost:${PORT}`);
+  console.log(`Server (Backend API Only) is running on http://localhost:${PORT}`);
   // ⭐️ สั่งให้ดึง Token มาเก็บไว้เลยตอนเริ่มเซิร์ฟเวอร์
   console.log('Pre-fetching DGA Token on server start...');
   getDgaToken().catch(err => {

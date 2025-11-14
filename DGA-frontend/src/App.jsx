@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import './App.css'; // เราจะใช้ CSS จากไฟล์นี้
 
-// final-fix-commit-check (เพิ่มบรรทัดนี้)
+// ⭐️⭐️ นี่คือ URL ที่ถูกต้องสำหรับแผน 2-Container ⭐️⭐️
+// Nginx จะรับ Path /api แล้วส่งต่อไปให้ Backend (Port 1040)
 const BACKEND_URL = '/api';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   const [notiStatus, setNotiStatus] = useState('');
 
   // --- 2. ฟังก์ชัน Login ---
+  // (แปลงมาจาก `handleLogin` และ `handleGetUserData` ใน Demo)
   const handleLogin = async () => {
     setIsLoading(true);
     setStatus('กำลัง Login...');
@@ -34,19 +36,22 @@ function App() {
       });
 
       if (!loginResponse.ok) {
-        throw new Error(`Login failed (Status: ${loginResponse.status})`);
+        const errData = await loginResponse.json();
+        throw new Error(errData.error || `Login failed (Status: ${loginResponse.status})`);
       }
 
       console.log('Login successful, fetching user data...');
 
       // ขั้นตอนที่ 3: เรียก /api/get-user-data (จาก Session)
-      const userResponse = await fetch(`${BACKEND_URL}/api/get-user-data`, {
+      // ⭐️ ชื่อ Endpoint ต้องตรงกับ server.js (ฉบับย้อนกลับ)
+      const userResponse = await fetch(`${BACKEND_URL}/get-user-data`, {
         method: 'GET',
         credentials: 'include' // สำคัญมากสำหรับ Session
       });
 
       if (!userResponse.ok) {
-        throw new Error(`Failed to get user data (Status: ${userResponse.status})`);
+        const errData = await userResponse.json();
+        throw new Error(errData.error || `Failed to get user data (Status: ${userResponse.status})`);
       }
 
       const userDataFromApi = await userResponse.json();
@@ -132,7 +137,7 @@ function App() {
         <>
           <div className="section">
             <h2>2. User Data (from Session)</h2>
-            <p>ข้อมูลนี้ดึงมาจาก <code>GET /api/get-user-data</code></p>
+            <p>ข้อมูลนี้ดึงมาจาก <code>GET /get-user-data</code></p>
             <pre>{JSON.stringify(userData, null, 2)}</pre>
           </div>
 

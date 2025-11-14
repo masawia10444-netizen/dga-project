@@ -1,18 +1,28 @@
-version: '3.8'
-
+# ⭐️ ลบ 'version' ที่มันเตือนออก
 services:
-  # --- ไม่มี 'frontend' service แล้ว ---
-
-  # --- Service เดียวที่รวมทุกอย่าง ---
-  app: 
+  # --- 1. บริการ Backend (API) ---
+  backend:
     build:
-      context: . # ⭐️ Build จาก Root (ที่นี่)
-      dockerfile: Dockerfile # ⭐️ โดยใช้ไฟล์ Dockerfile (ตัวใหม่นอกสุด)
-    container_name: dga_app_combined
+      context: ./DGA-back
+      # ⭐️ เราต้องสร้าง Dockerfile ให้ Backend ด้วย
+      dockerfile: Dockerfile
+    container_name: dga_backend_service
     restart: unless-stopped
     ports:
-      # ⭐️ Map Port 1040 ของ Host ไปยัง 1040 ของ Container
+      # ⭐️ เปิด Port 1040 (สำหรับ Backend)
       - "1040:1040"
     env_file:
-      # ⭐️ ยังคงดึง .env จาก DGA-back
       - ./DGA-back/.env
+
+  # --- 2. บริการ Frontend (React) ---
+  frontend:
+    build:
+      context: ./DGA-frontend
+      dockerfile: Dockerfile
+    container_name: dga_frontend_service
+    restart: unless-stopped
+    ports:
+      # ⭐️ เปิด Port 80 (สำหรับ Frontend)
+      - "80:80"
+    depends_on:
+      - backend

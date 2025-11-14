@@ -26,7 +26,7 @@ services:
     # (เพราะ 'Dockerfile' มี CMD ["serve", ...] อยู่แล้ว)
 
     ports:
-      - "8080:3000"
+      - "8080:5174"
     
     depends_on:
       - backend

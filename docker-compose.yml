@@ -1,28 +1,29 @@
-# ⭐️ ลบ 'version' ที่มันเตือนออก
+version: '3.8'
+
 services:
-  # --- 1. บริการ Backend (API) ---
+  # 1. บริการ Back-end
   backend:
-    build:
-      context: ./DGA-back
-      dockerfile: Dockerfile
-    container_name: dga_backend_service
-    restart: unless-stopped
+    build: ./DGA-back
+    command: npm run dev
+    working_dir: /usr/src/app
     ports:
-      # ⭐️ เปิด Port 1040 (สำหรับ Backend)
       - "1040:1040"
     env_file:
       - ./DGA-back/.env
+    volumes:
+      - ./DGA-back:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
 
-  # --- 2. บริการ Frontend (React) ---
+  # 2. บริการ Front-end
   frontend:
-    build:
-      context: ./DGA-frontend
-      dockerfile: Dockerfile
-    container_name: dga_frontend_service
-    restart: unless-stopped
+    build: ./DGA-frontend
+    # (command: npm run dev ถูกกำหนดใน Dockerfile แล้ว)
     ports:
-      # ⭐️⭐️ แก้ไขตรงนี้ ⭐️⭐️
-      # Map Port 8080 (Host) ไปที่ Port 80 (Container)
-      - "8084:84"
+      - "8083:5174"
+    volumes:
+      - ./DGA-frontend:/app
+      - /app/node_modules
     depends_on:
       - backend

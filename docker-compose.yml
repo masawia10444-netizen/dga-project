@@ -4,7 +4,6 @@ services:
   backend:
     build:
       context: ./DGA-back
-      # ⭐️ เราต้องสร้าง Dockerfile ให้ Backend ด้วย
       dockerfile: Dockerfile
     container_name: dga_backend_service
     restart: unless-stopped
@@ -22,7 +21,8 @@ services:
     container_name: dga_frontend_service
     restart: unless-stopped
     ports:
-      # ⭐️ เปิด Port 80 (สำหรับ Frontend)
-      - "80:80"
+      # ⭐️⭐️ แก้ไขตรงนี้ ⭐️⭐️
+      # Map Port 8080 (Host) ไปที่ Port 80 (Container)
+      - "8084:84"
     depends_on:
       - backend

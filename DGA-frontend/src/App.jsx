@@ -14,7 +14,7 @@ function App() {
     setAuthResponse("...กำลัง Auth...");
     setAuthToken(""); // 👈 ล้าง Token เก่า
     try {
-      const response = await axios.get(`https://czp-staging.biza.me/backend-api/dga/auth`);
+      const response = await axios.get('http://localhost:1040/api/dga/auth');
       
       // ดึง "Token" จาก response
       const token = response.data?.Result || response.data?.token || response.data?.Token; 
@@ -52,27 +52,20 @@ function App() {
 
   return (
     <div style={{ padding: '50px', textAlign: 'center' }}>
-      <h1>ทดสอบ DGA API (2 ขั้นตอน)</h1>
+      <h1>TEST DGA API</h1>
 
       {/* --- 1. Authentication --- */}
       <div style={{ border: '1px solid gray', padding: '20px', marginBottom: '20px' }}>
         <h3>ขั้นตอนที่ 1: Authentication</h3>
         <button onClick={handleDgaAuthClick} style={{ fontSize: '1.2em', padding: '10px' }}>
-          กดเพื่อ Auth (รับ Token)
+          Login
         </button>
         <pre style={preStyle}>{authResponse}</pre>
       </div>
 
       {/* --- 2. Mock Data --- */}
       <div style={{ border: '1px solid gray', padding: '20px' }}>
-        <h3>ขั้นตอนที่ 2: Mock Data (ใช้ Token เพื่อรับ mToken)</h3>
-        <button 
-          onClick={handleMockDataClick} 
-          style={{ fontSize: '1.2em', padding: '10px', backgroundColor: 'lime' }}
-          disabled={!authToken} // 👈 กดปุ่มไม่ได้ถ้ายังไม่ Auth
-        >
-          กดเพื่อ Mock Data
-        </button>
+        <h3>ขั้นตอนที่ 2: Notification</h3>
         <pre style={preStyle}>{mockResponse}</pre>
       </div>
 

@@ -1,20 +1,17 @@
-# 1. Back-end Dockerfile
+# 1. ใช้ Base Image ของ Node 18
 FROM node:18-alpine
 
-# ตั้งค่าโฟลเดอร์ทำงานใน Container
+# 2. ตั้งค่าที่ทำงานใน container
 WORKDIR /usr/src/app
 
-# Copy package.json เข้าไปก่อน (เพื่อใช้ cache)
+# 3. คัดลอก package.json และ package-lock.json
 COPY package*.json ./
 
-# ติดตั้ง dependencies
+# 4. ติดตั้ง Dependencies
 RUN npm install
 
-# Copy โค้ดที่เหลือทั้งหมด
-COPY . .
-
-# (เราจะใช้ port จาก .env แต่บอก Docker ให้อ้างอิง 1040 ไว้)
+# 5. เปิด Port ที่ backend เราใช้ (จาก .env คือ 1040)
 EXPOSE 1040
 
-# คำสั่งเริ่มต้น (จะถูก Docker Compose สั่งทับ)
-CMD [ "node", "server.js" ]
+# 6. คำสั่งเริ่มต้น (ซึ่ง docker-compose จะ override เป็น npm run dev)
+CMD [ "npm", "run", "start" ]

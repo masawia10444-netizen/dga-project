@@ -14,7 +14,7 @@ function App() {
     setAuthResponse("...กำลัง Auth...");
     setAuthToken(""); // 👈 ล้าง Token เก่า
     try {
-      const response = await axios.get('http://localhost:1040/api/dga/auth');
+      const response = await axios.get(`https://czp-staging.biza.me/backend-api/dga/auth`);
       
       // ดึง "Token" จาก response
       const token = response.data?.Result || response.data?.token || response.data?.Token; 

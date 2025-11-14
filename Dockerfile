@@ -1,5 +1,5 @@
 # ----- STAGE 1: Build Frontend (React) -----
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 # Copy package.json files from DGA-frontend
 COPY DGA-frontend/package.json DGA-frontend/package-lock.json* ./

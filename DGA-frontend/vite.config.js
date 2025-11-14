@@ -17,7 +17,7 @@ export default defineConfig({
 
   // (ส่วน server ของคุณ OK แล้วครับ เก็บไว้ได้)
   server: {
-    port: 5173,
+    port: 5174,
     allowedHosts: ['czp-staging.biza.me'],
 
     watch: {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './App.css'; // เราจะใช้ CSS จากไฟล์นี้แทน <style>
 
 // ⭐️⭐️ แก้ไข URL นี้ให้ตรงกับ Nginx Proxy Manager ของคุณ ⭐️⭐️
-const BACKEND_URL = 'http://czp-staging.biza.me/test5';
+const BACKEND_URL = 'https://czp-staging.biza.me/test5';
 
 function App() {
   // --- 1. สร้าง State สำหรับเก็บข้อมูล ---

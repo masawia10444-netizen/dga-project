@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import './App.css'; // เราจะใช้ CSS จากไฟล์นี้แทน <style>
+import './App.css'; // เราจะใช้ CSS จากไฟล์นี้
 
-// ⭐️⭐️ แก้ไข URL นี้ให้ตรงกับ Nginx Proxy Manager ของคุณ ⭐️⭐️
-const BACKEND_URL = '/test5';
+// ⭐️⭐️ นี่คือ URL ที่ถูกต้องสำหรับโครงสร้างใหม่ ⭐️⭐️
+const BACKEND_URL = '/api';
 
 function App() {
   // --- 1. สร้าง State สำหรับเก็บข้อมูล ---
-  // useState คือ "ความจำ" ของ Component
   const [userData, setUserData] = useState(null); // เก็บข้อมูลผู้ใช้หลัง Login
   const [status, setStatus] = useState(''); // เก็บข้อความสถานะ
   const [error, setError] = useState(''); // เก็บข้อความ Error
@@ -16,19 +15,17 @@ function App() {
   const [notiStatus, setNotiStatus] = useState('');
 
   // --- 2. ฟังก์ชัน Login ---
-  // (แปลงมาจาก `handleLogin` และ `handleGetUserData` ใน Demo)
   const handleLogin = async () => {
     setIsLoading(true);
     setStatus('กำลัง Login...');
     setError('');
-    // เทส
 
     try {
       // ขั้นตอนที่ 1: เรียก SDK (Mock)
       const mockAppId = window.czpSdk.getAppId();
       const mToken = window.czpSdk.getToken();
 
-      // ขั้นตอนที่ 2: เรียก Backend /profile/login (ต้องใช้ 'credentials: include')
+      // ขั้นตอนที่ 2: เรียก Backend /api/profile/login (ต้องใช้ 'credentials: include')
       const loginResponse = await fetch(`${BACKEND_URL}/profile/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

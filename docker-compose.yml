@@ -1,29 +1,18 @@
 version: '3.8'
 
 services:
-  # 1. บริการ Back-end
-  backend:
-    build: ./DGA-back
-    command: npm run dev
-    working_dir: /usr/src/app
+  # --- ไม่มี 'frontend' service แล้ว ---
+
+  # --- Service เดียวที่รวมทุกอย่าง ---
+  app: 
+    build:
+      context: . # ⭐️ Build จาก Root (ที่นี่)
+      dockerfile: Dockerfile # ⭐️ โดยใช้ไฟล์ Dockerfile (ตัวใหม่นอกสุด)
+    container_name: dga_app_combined
+    restart: unless-stopped
     ports:
+      # ⭐️ Map Port 1040 ของ Host ไปยัง 1040 ของ Container
       - "1040:1040"
     env_file:
+      # ⭐️ ยังคงดึง .env จาก DGA-back
       - ./DGA-back/.env
-    volumes:
-      - ./DGA-back:/usr/src/app
-      - /usr/src/app/node_modules
-    environment:
-      - NODE_ENV=development
-
-  # 2. บริการ Front-end
-  frontend:
-    build: ./DGA-frontend
-    # (command: npm run dev ถูกกำหนดใน Dockerfile แล้ว)
-    ports:
-      - "8083:5174"
-    volumes:
-      - ./DGA-frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend

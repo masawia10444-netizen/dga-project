@@ -1,10 +1,10 @@
-
 version: '3.8'
 
 services:
-  # 1. บริการ Back-end
+  # 1. บริการ Back-end (Node.js/Express)
   backend:
-    build: ./DGA-back
+    build: 
+      context: ./DGA-back
     command: npm run dev
     working_dir: /usr/src/app
     ports:
@@ -12,19 +12,24 @@ services:
     env_file:
       - ./DGA-back/.env
     volumes:
+      # Map host code to container workdir
       - ./DGA-back:/usr/src/app
+      # Explicitly isolate node_modules
       - /usr/src/app/node_modules
     environment:
       - NODE_ENV=development
 
-  # 2. บริการ Front-end
+  # 2. บริการ Front-end (Vite/React)
   frontend:
-    build: ./DGA-frontend
-    # (command: npm run dev ถูกกำหนดใน Dockerfile แล้ว)
+    build: 
+      context: ./DGA-frontend
+    working_dir: /app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
     ports:
       - "8083:5174"
     volumes:
-      - ./DGA-frontend:/app
+      # Map host code to container workdir
+      - ./DGA-frontend:/app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
+      # Explicitly isolate node_modules
       - /app/node_modules
     depends_on:
       - backend

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css'; // เราจะใช้ CSS จากไฟล์นี้
 
-// ⭐️⭐️ นี่คือ URL ที่ถูกต้องสำหรับโครงสร้างใหม่ ⭐️⭐️
+// final-fix-commit-check (เพิ่มบรรทัดนี้)
 const BACKEND_URL = '/api';
 
 function App() {

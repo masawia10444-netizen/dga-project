@@ -14,7 +14,7 @@ app.use(express.json());
 
 // --- ⭐️ API หลักสำหรับ "ทางรัฐ" Miniapp (ตามแผนภาพ) ⭐️ ---
 // (รวมขั้นตอน Auth + Deproc ไว้ในที่เดียว)
-app.post('/test5/api/miniapp/login', async (req, res) => {
+app.post('/api/miniapp/login', async (req, res) => {
   
   // 1. ⭐️ รับ appId และ mToken ที่ "ทางรัฐ" ส่งมาให้ (จากรูปข้อ 2)
   const { appId, mToken } = req.body;
@@ -77,7 +77,7 @@ app.post('/test5/api/miniapp/login', async (req, res) => {
   }
 });
 
-app.post('/test5/api/dga/send-notification', async (req, res) => {
+app.post('/api/dga/send-notification', async (req, res) => {
   
   const { token, userId, message } = req.body;
   if (!token || !userId || !message) {

@@ -21,6 +21,7 @@ function App() {
     setIsLoading(true);
     setStatus('กำลัง Login...');
     setError('');
+    // เทส
 
     try {
       // ขั้นตอนที่ 1: เรียก SDK (Mock)

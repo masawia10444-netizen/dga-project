@@ -1,83 +1,161 @@
 import { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import './App.css'; // เราจะใช้ CSS จากไฟล์นี้แทน <style>
+
+// ⭐️⭐️ แก้ไข URL นี้ให้ตรงกับ Nginx Proxy Manager ของคุณ ⭐️⭐️
+const BACKEND_URL = 'http://czp-staging.biza.me/test5';
 
 function App() {
+  // --- 1. สร้าง State สำหรับเก็บข้อมูล ---
+  // useState คือ "ความจำ" ของ Component
+  const [userData, setUserData] = useState(null); // เก็บข้อมูลผู้ใช้หลัง Login
+  const [status, setStatus] = useState(''); // เก็บข้อความสถานะ
+  const [error, setError] = useState(''); // เก็บข้อความ Error
+  const [isLoading, setIsLoading] = useState(false); // สถานะ Loading
 
-  // State สำหรับเก็บ Token และ Response
-  const [authToken, setAuthToken] = useState(""); // 👈 "Token" (จาก Auth)
-  const [authResponse, setAuthResponse] = useState("ยังไม่ได้ Auth...");
-  const [mockResponse, setMockResponse] = useState("ยังไม่ได้ Mock...");
+  const [notiMessage, setNotiMessage] = useState('ทดสอบการส่ง Notification จาก React!');
+  const [notiStatus, setNotiStatus] = useState('');
 
-  // 1. ฟังก์ชัน Auth (เพื่อเอา "Token")
-  const handleDgaAuthClick = async () => {
-    setAuthResponse("...กำลัง Auth...");
-    setAuthToken(""); // 👈 ล้าง Token เก่า
+  // --- 2. ฟังก์ชัน Login ---
+  // (แปลงมาจาก `handleLogin` และ `handleGetUserData` ใน Demo)
+  const handleLogin = async () => {
+    setIsLoading(true);
+    setStatus('กำลัง Login...');
+    setError('');
+
     try {
-      const response = await axios.get('http://localhost:1040/api/dga/auth');
-      
-      // ดึง "Token" จาก response
-      const token = response.data?.Result || response.data?.token || response.data?.Token; 
+      // ขั้นตอนที่ 1: เรียก SDK (Mock)
+      const mockAppId = window.czpSdk.getAppId();
+      const mToken = window.czpSdk.getToken();
 
-      if (token) {
-        setAuthToken(token); // 👈 เก็บ Token ไว้ใน State
-        setAuthResponse("ได้ Token แล้ว: " + token.substring(0, 15) + "..."); // แสดง Token แบบย่อ
-      } else {
-        setAuthResponse("Auth สำเร็จ แต่หา Token ไม่เจอ!");
-      }
-
-    } catch (error) {
-      console.error("Auth ไม่สำเร็จ!", error);
-      setAuthResponse("Auth ไม่สำเร็จ! (ดู Console)");
-    }
-  };
-
-  // 2. ฟังก์ชัน Mock Data (เพื่อเอา "mToken")
-  const handleMockDataClick = async () => {
-    setMockResponse("...กำลัง Mock Data...");
-    try {
-      // 3. ยิงไปที่ Server ของเรา (/api/dga/mock-data)
-      const response = await axios.post('http://localhost:1040/api/dga/mock-data', {
-        token: authToken // 👈 ส่ง "Token" (จาก Auth) ไปให้ Back-end
+      // ขั้นตอนที่ 2: เรียก Backend /profile/login (ต้องใช้ 'credentials: include')
+      const loginResponse = await fetch(`${BACKEND_URL}/profile/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appId: mockAppId, mToken: mToken }),
+        credentials: 'include' // สำคัญมากสำหรับ Session
       });
 
-      // 4. แสดงผลลัพธ์ (ที่น่าจะมี mToken)
-      setMockResponse(JSON.stringify(response.data, null, 2));
+      if (!loginResponse.ok) {
+        throw new Error(`Login failed (Status: ${loginResponse.status})`);
+      }
 
-    } catch (error) {
-      console.error("Mock Data ไม่สำเร็จ!", error);
-      setMockResponse("Mock Data ไม่สำเร็จ! (ดู Console)");
+      console.log('Login successful, fetching user data...');
+
+      // ขั้นตอนที่ 3: เรียก /api/get-user-data (จาก Session)
+      const userResponse = await fetch(`${BACKEND_URL}/api/get-user-data`, {
+        method: 'GET',
+        credentials: 'include' // สำคัญมากสำหรับ Session
+      });
+
+      if (!userResponse.ok) {
+        throw new Error(`Failed to get user data (Status: ${userResponse.status})`);
+      }
+
+      const userDataFromApi = await userResponse.json();
+      console.log('Get User Data Result:', userDataFromApi);
+
+      // ⭐️ บันทึกข้อมูลผู้ใช้ลง State (ความจำ)
+      setUserData(userDataFromApi);
+      setStatus('Login และดึงข้อมูลสำเร็จ!');
+
+    } catch (err) {
+      console.error('Login Flow Error:', err);
+      setError(`Login Error: ${err.message}`);
+      setStatus('');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // --- 3. ฟังก์ชันส่ง Notification ---
+  const handleSendNotification = async () => {
+    if (!userData || !(userData.userid || userData.userId)) {
+      alert('Error: User ID not found. Please log in again.');
+      return;
+    }
+    
+    // ดึง userId จาก State
+    const currentUserId = userData.userid || userData.userId;
+
+    setIsLoading(true);
+    setNotiStatus('กำลังส่ง Notification...');
+    setError('');
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/send-single-noti`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUserId,
+          message: notiMessage
+        }),
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send notification');
+      }
+
+      const transactionId = result.result ? result.result[0] : 'N/A';
+      setNotiStatus(`Notification sent! TransactionID: ${transactionId}`);
+
+    } catch (err) {
+      console.error('Send Noti Error:', err);
+      setError(`Send Noti Error: ${err.message}`);
+      setNotiStatus('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- 4. ส่วนแสดงผล (UI) ---
   return (
-    <div style={{ padding: '50px', textAlign: 'center' }}>
-      <h1>TEST DGA API</h1>
+    <div className="container">
+      <h1>DGA Miniapp Frontend (React)</h1>
 
-      {/* --- 1. Authentication --- */}
-      <div style={{ border: '1px solid gray', padding: '20px', marginBottom: '20px' }}>
-        <h3>ขั้นตอนที่ 1: Authentication</h3>
-        <button onClick={handleDgaAuthClick} style={{ fontSize: '1.2em', padding: '10px' }}>
-          Login
-        </button>
-        <pre style={preStyle}>{authResponse}</pre>
-      </div>
+      {/* --- ส่วนแสดงผล Status --- */}
+      {status && <div className="status success">{status}</div>}
+      {error && <div className="status error">{error}</div>}
 
-      {/* --- 2. Mock Data --- */}
-      <div style={{ border: '1px solid gray', padding: '20px' }}>
-        <h3>ขั้นตอนที่ 2: Notification</h3>
-        <pre style={preStyle}>{mockResponse}</pre>
-      </div>
+      {/* --- ส่วนที่ 1: Login --- */}
+      {!userData && (
+        <div className="section">
+          <h2>1. Login Flow</h2>
+          <p>คลิกปุ่มนี้เพื่อจำลองการเรียก SDK และส่ง `mToken` ไปให้ Backend</p>
+          <button onClick={handleLogin} disabled={isLoading}>
+            {isLoading ? 'กำลังโหลด...' : 'Login'}
+          </button>
+        </div>
+      )}
 
+      {/* --- ส่วนที่ 2 & 3 (จะแสดงก็ต่อเมื่อ Login สำเร็จ) --- */}
+      {userData && (
+        <>
+          <div className="section">
+            <h2>2. User Data (from Session)</h2>
+            <p>ข้อมูลนี้ดึงมาจาก <code>GET /api/get-user-data</code></p>
+            <pre>{JSON.stringify(userData, null, 2)}</pre>
+          </div>
+
+          <div className="section">
+            <h2>3. Send Notification (Single)</h2>
+            <p>ส่งข้อความไปยัง User ID: {userData.userid || userData.userId}</p>
+            <input
+              type="text"
+              value={notiMessage}
+              onChange={(e) => setNotiMessage(e.target.value)}
+            />
+            <br />
+            <button onClick={handleSendNotification} disabled={isLoading}>
+              {isLoading ? 'กำลังส่ง...' : 'Send Notification'}
+            </button>
+            {notiStatus && <div className="status success">{notiStatus}</div>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
-// Style สำหรับ <pre>
-const preStyle = {
-  marginTop: '20px', padding: '10px', backgroundColor: '#333', 
-  color: 'lime', textAlign: 'left', minHeight: '50px',
-  whiteSpace: 'pre-wrap', wordBreak: 'break-all'
-};
 
 export default App;

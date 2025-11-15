@@ -87,6 +87,11 @@ async function getDgaToken() {
  */
 app.post('/profile/login', async (req, res) => {
   const { appId, mToken } = req.body;
+    
+    // ⭐️ เพิ่ม Log เพื่อตรวจสอบค่าที่ได้รับจาก Frontend
+    console.log(`[LOGIN] Received appId: ${appId}`);
+    console.log(`[LOGIN] Received mToken: ${mToken ? mToken.substring(0, 10) + '...' : 'N/A'}`); // แสดง mToken บางส่วนเพื่อความปลอดภัย
+    
   if (!appId || !mToken) {
     return res.status(400).json({ error: 'AppID and mToken are required.' });
   }

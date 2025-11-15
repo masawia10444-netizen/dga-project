@@ -94,7 +94,7 @@ async function getDgaToken() {
  * - ทำหน้าที่: จำลองการ Validate เพื่อดึง Token สำหรับใช้ในการเรียก API ขั้นต่อไป
  * - ตอบกลับ: { token: string }
  */
-app.get('/test5/api/validate', async (req, res) => {
+app.get('/api/validate', async (req, res) => {
   console.log('[Validate] Requesting DGA Token...');
   try {
     const token = await getDgaToken();
@@ -111,7 +111,7 @@ app.get('/test5/api/validate', async (req, res) => {
  * - ทำหน้าที่: เรียก DGA API เพื่อตรวจสอบ mToken และดึงข้อมูลผู้ใช้
  * - ผลลัพธ์: เก็บข้อมูลผู้ใช้ลงใน Session
  */
-app.post('/test5/api/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   // โค้ดที่อ้างอิงมีการส่ง 'token' (DGA Access Token) มาด้วย แต่โค้ดนี้จะใช้ Token ใหม่เสมอสำหรับ Notification
   const { appId, mToken } = req.body; 
   if (!appId || !mToken) {
@@ -144,7 +144,7 @@ app.post('/test5/api/login', async (req, res) => {
  * Endpoint: /test5/api/get-user-data
  * - ทำหน้าที่: เป็นจุดตรวจสอบสถานะ Login ของผู้ใช้
  */
-app.get('/test5/api/get-user-data', (req, res) => {
+app.get('/api/get-user-data', (req, res) => {
   if (req.session.user) {
     res.json(req.session.user);
   } else {
@@ -226,7 +226,7 @@ async function sendDgaNotification(notifications, sendDateTime = null) {
  * - ทำหน้าที่: รองรับการส่ง Notification ทันที (ขั้นตอน [4] ในโค้ดอ้างอิง)
  * - รับ userId และ message จาก request body
  */
-app.post('/test5/api/notification', async (req, res) => {
+app.post('/api/notification', async (req, res) => {
   try {
     // 1. ดึงข้อมูลที่จำเป็นจาก request body
     const { userId, message } = req.body;

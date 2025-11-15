@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 // ใช้ Prefix ที่กำหนดใน Backend (server.js)
-const API_PREFIX = '/test5/api'; 
+const API_PREFIX = '/api'; 
 // ฟังก์ชันสำหรับ Log (เพื่อแสดงผลใน Console)
 const log = (message) => console.log(`[LOG] ${message}`);
 

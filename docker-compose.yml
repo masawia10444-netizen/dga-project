@@ -5,31 +5,43 @@ services:
   backend:
     build: 
       context: ./DGA-back
-    command: npm run dev
+    # 💡 ใช้ 'npm start' แทน 'npm run dev' ถ้า package.json มี 'start' script ที่ดี
+    # ถ้า 'npm run dev' มีnodemon ให้ใช้ตามเดิม แต่ต้องมั่นใจว่ามี nodemon ใน container
+    command: npm run dev 
     working_dir: /usr/src/app
     ports:
       - "1040:1040"
+    # ดึงตัวแปร ENV สำหรับ Consumer Keys (DGA)
     env_file:
       - ./DGA-back/.env
     volumes:
-      # Map host code to container workdir
+      # Map host code to container workdir (เพื่อ Hot Reload)
       - ./DGA-back:/usr/src/app
       # Explicitly isolate node_modules
       - /usr/src/app/node_modules
     environment:
       - NODE_ENV=development
+      # 💡 เพิ่มตัวแปรนี้เพื่อระบุ Frontend URL สำหรับ CORS (ถ้ามีการระบุใน server.js)
+      - FRONTEND_URL=http://localhost:8083 
+      # หมายเหตุ: Frontend จะเรียกหา Backend ผ่านชื่อ Service Name 'backend' ไม่ใช่ localhost:1040
 
   # 2. บริการ Front-end (Vite/React)
   frontend:
     build: 
       context: ./DGA-frontend
-    working_dir: /app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
+    working_dir: /app
     ports:
-      - "8083:5174"
+      # ✅ คง Port ตามที่กำหนดไว้: Host Port 8083 --> Container Port 5174
+      - "8083:5174" 
     volumes:
-      # Map host code to container workdir
-      - ./DGA-frontend:/app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
+      # Map host code to container workdir (เพื่อ Hot Reload)
+      - ./DGA-frontend:/app 
       # Explicitly isolate node_modules
       - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      # ⭐️ สำคัญ: Environment variable สำหรับ Frontend เพื่อให้เรียก Backend ถูกต้อง
+      # Frontend ต้องเรียกใช้ชื่อ Service Name 'backend' ภายใน Docker network
+      - VITE_BACKEND_URL=http://backend:1040 
     depends_on:
       - backend

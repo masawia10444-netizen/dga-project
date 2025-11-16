@@ -13,9 +13,6 @@ FROM nginx:alpine
 # ⭐️ คัดลอกไฟล์ที่ Build แล้วจาก /app/dist ไปยัง Nginx default location
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# ⭐️ (แนะนำ) ต้องเพิ่มไฟล์ nginx.conf สำหรับการจัดการ Routing
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
 # 5. เปิด Port 80 (Nginx Default)
 EXPOSE 80 
 CMD ["nginx", "-g", "daemon off;"]

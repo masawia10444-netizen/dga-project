@@ -1,35 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// กำหนด Port ที่ Vite Dev Server รันภายใน Container
-const VITE_DEV_PORT = 5174; 
-
-// Base URL ของ Backend ที่รันบน Host Port 1040
-const BACKEND_URL = 'http://localhost:1040'; 
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   
-  // ⭐️ สำคัญ: กำหนด Base Path สำหรับ Deployment บน Subpath (/test5/)
-  // เพื่อให้ Vite สร้าง Path ของ Assets ที่ถูกต้อง เช่น /test5/assets/index.js
+  // Sets the base path for assets during build (crucial for deployment under /test5/)
   base: '/test5/', 
 
   server: {
-    // 1. กำหนด Port ภายใน Container
-    port: VITE_DEV_PORT,
+    // Port for the development server inside the container
+    port: 5174,
     
-    // 2. ให้เซิร์ฟเวอร์เข้าถึงได้จากภายนอก (จำเป็นสำหรับ Docker)
+    // Allows the server to be accessible externally (required for Docker)
     host: true,
 
-    // 3. การตั้งค่า PROXY สำหรับการเรียก API
-    // ถ้า Frontend เรียก URL ที่ขึ้นต้นด้วย /api, ให้ส่งต่อไปที่ Backend http://localhost:1040
+    // PROXY configuration for API calls during development
     proxy: {
-        '/api': {
-            target: BACKEND_URL, 
-            changeOrigin: true, // เปลี่ยน Host Header
-            secure: false,
-        },
+      '/api': {
+        target: 'http://localhost:1040', 
+        changeOrigin: true,
+        secure: false,
+      },
     }
-  }
+  },
+  // Setting base to '/test5/' is the correct way to handle subpath deployment for Vite/React.
+  // The Nginx config we created earlier will ensure this works correctly in production.
 })

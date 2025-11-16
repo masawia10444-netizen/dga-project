@@ -1,35 +1,43 @@
 version: '3.8'
 
 services:
-  # 1. บริการ Back-end (Node.js/Express)
-  backend:
-    build: 
-      context: ./DGA-back
-    # ❌ ลบ command: npm run dev ออก เพื่อให้ใช้ CMD ใน Dockerfile (npm start)
-    # command: npm run dev 
-    working_dir: /usr/src/app
-    ports:
-      # คง Port 1040 ไว้ตามเดิม
-      - "1040:1040" 
-    env_file:
-      - ./DGA-back/.env
-    # Volumes ยังคงไว้สำหรับการพัฒนา
-    volumes:
-      - ./DGA-back:/usr/src/app
-      - /usr/src/app/node_modules
-    environment:
-      - NODE_ENV=development
-
-  # 2. บริการ Front-end (Nginx Server)
+  # ----------------------------------------
+  # 1. FRONTEND SERVICE (Nginx + React/Vite Build)
+  # ----------------------------------------
   frontend:
-    build: 
+    # บอก Docker ให้ไป Build Image จาก Dockerfile ที่อยู่ในโฟลเดอร์ DGA-frontend/
+    build:
       context: ./DGA-frontend
+      dockerfile: Dockerfile
+    
+    # เปิด Port ภายนอก (80) เพื่อเข้าถึง Nginx
     ports:
-      # ⭐️ คง Host Port 8083 แต่แมปเข้า Container Port 80 (Nginx)
-      - "8083:80" 
-    # ❌ ลบ volumes ออกถ้าจะใช้ Deploy จริง (แต่ถ้ายังอยู่ในระหว่างการพัฒนา/Staging อาจจะยังคง volumes เพื่อความสะดวก)
-    # volumes:
-    #   - ./DGA-frontend:/app
-    #   - /app/node_modules
+      - "80:80" 
+    
+    # กำหนดให้รันหลัง backend พร้อมแล้ว (ถ้า backend มีการเชื่อมต่อฐานข้อมูล)
     depends_on:
       - backend
+      
+    # ให้รีสตาร์ทอัตโนมัติหากมีปัญหา
+    restart: always
+
+  # ----------------------------------------
+  # 2. BACKEND SERVICE (Node.js/Express)
+  # ----------------------------------------
+  backend:
+    # สมมติว่า DGA-back มี Dockerfile อยู่
+    build: 
+      context: ./DGA-back
+      dockerfile: Dockerfile
+
+    # เปิด Port ภายนอก (1040) เพื่อให้ Frontend (Dev) หรือการเรียกตรงเข้าถึงได้
+    # แต่ปกติแล้ว Frontend ที่รันผ่าน Nginx จะเรียกผ่าน Internal Network
+    ports:
+      - "1040:1040" 
+
+    # Environment variables (ตัวอย่าง, ต้องปรับใช้จริงตาม Backend)
+    environment:
+      NODE_ENV: production
+      PORT: 1040
+
+    restart: always

@@ -1,19 +1,12 @@
-// routes/dga.route.js (ES Modules)
-
-import express from 'express';
-// *** นำเข้า Controller Functions แบบ Destructuring ***
-import * as dgaController from '../controllers/dga.controller.js'; // ต้องเพิ่ม .js นามสกุล
-
+const express = require('express');
 const router = express.Router();
+const dgaController = require('../controllers/dga.controller');
+const authMiddleware = require('../middleware/auth.middleware'); // นำเข้า Middleware
 
-// DGA API Routes
-router.get('/validate', dgaController.validateToken);
-router.post('/login', dgaController.loginUser);
-router.post('/notification', dgaController.sendNotification);
+// 1. Route สำหรับขอ Token (ไม่ต้องมี Middleware)
+router.get('/auth/validate', dgaController.getAccessToken);
 
-// Session Routes
-router.get('/get-user-data', dgaController.getUserData);
-router.get('/logout', dgaController.logoutUser);
+// 2. Route ที่ต้องมีการยืนยันตัวตน (มี Middleware)
+router.get('/dga/data', authMiddleware.verifyToken, dgaController.getDGAData); 
 
-// *** ใช้ export default ***
-export default router;
+module.exports = router;

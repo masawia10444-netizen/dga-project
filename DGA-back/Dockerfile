@@ -1,17 +1,21 @@
-# 1. ใช้ Base Image ของ Node 18
-FROM node:18-alpine
+# === STAGE 1: BUILD (สำหรับติดตั้ง Dependencies) ===
+FROM node:18-alpine AS builder
 
-# 2. ตั้งค่าที่ทำงานใน container
 WORKDIR /usr/src/app
-
-# 3. คัดลอก package.json และ package-lock.json
 COPY package*.json ./
-
 # 4. ติดตั้ง Dependencies
 RUN npm install
 
-# 5. เปิด Port ที่ backend เราใช้ (จาก .env คือ 1040)
-EXPOSE 1040
+# === STAGE 2: PRODUCTION (สำหรับรันโค้ดจริง) ===
+FROM node:18-alpine
 
-# 6. คำสั่งเริ่มต้น (ซึ่ง docker-compose จะ override เป็น npm run dev)
-CMD [ "npm", "run", "start" ]
+# ดึง dependencies ที่ติดตั้งแล้วมาจาก builder stage
+WORKDIR /usr/src/app
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY . .
+
+# 5. เปิด Port 1040
+EXPOSE 1040 
+
+# 6. คำสั่งเริ่มต้น (ใช้สำหรับ Production)
+CMD [ "npm", "start" ]

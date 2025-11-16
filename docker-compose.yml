@@ -1,43 +1,35 @@
 version: '3.8'
 
 services:
-  # ----------------------------------------
-  # 1. FRONTEND SERVICE (Nginx + React/Vite Build)
-  # ----------------------------------------
-  frontend:
-    # บอก Docker ให้ไป Build Image จาก Dockerfile ที่อยู่ในโฟลเดอร์ DGA-frontend/
-    build:
-      context: ./DGA-frontend
-      dockerfile: Dockerfile
-    
-    # เปิด Port ภายนอก (80) เพื่อเข้าถึง Nginx
-    ports:
-      - "8083:5174" 
-    
-    # กำหนดให้รันหลัง backend พร้อมแล้ว (ถ้า backend มีการเชื่อมต่อฐานข้อมูล)
-    depends_on:
-      - backend
-      
-    # ให้รีสตาร์ทอัตโนมัติหากมีปัญหา
-    restart: always
-
-  # ----------------------------------------
-  # 2. BACKEND SERVICE (Node.js/Express)
-  # ----------------------------------------
+  # 1. บริการ Back-end (Node.js/Express)
   backend:
-    # สมมติว่า DGA-back มี Dockerfile อยู่
     build: 
       context: ./DGA-back
-      dockerfile: Dockerfile
-
-    # เปิด Port ภายนอก (1040) เพื่อให้ Frontend (Dev) หรือการเรียกตรงเข้าถึงได้
-    # แต่ปกติแล้ว Frontend ที่รันผ่าน Nginx จะเรียกผ่าน Internal Network
+    command: npm run dev
+    working_dir: /usr/src/app
     ports:
-      - "1040:1040" 
-
-    # Environment variables (ตัวอย่าง, ต้องปรับใช้จริงตาม Backend)
+      - "1040:1040"
+    env_file:
+      - ./DGA-back/.env
+    volumes:
+      # Map host code to container workdir
+      - ./DGA-back:/usr/src/app
+      # Explicitly isolate node_modules
+      - /usr/src/app/node_modules
     environment:
-      NODE_ENV: production
-      PORT: 1040
+      - NODE_ENV=development
 
-    restart: always
+  # 2. บริการ Front-end (Vite/React)
+  frontend:
+    build: 
+      context: ./DGA-frontend
+    working_dir: /app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
+    ports:
+      - "8083:5174"
+    volumes:
+      # Map host code to container workdir
+      - ./DGA-frontend:/app # ⭐️ อัปเดตให้ตรงกับ Dockerfile ใหม่: /app
+      # Explicitly isolate node_modules
+      - /app/node_modules
+    depends_on:
+      - backend

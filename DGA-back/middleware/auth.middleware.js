@@ -1,21 +1,25 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-// ดึง JWT_SECRET จาก .env
 const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.verifyToken = (req, res, next) => {
+/**
+ * Middleware: ยืนยัน JWT Access Token
+ * @param {object} req 
+ * @param {object} res 
+ * @param {function} next 
+ */
+export const verifyToken = (req, res, next) => { // ⭐️ ใช้ export const เพื่อให้เข้ากับ ES Module
     // 1. ตรวจสอบว่ามี Token ใน Header: Authorization: Bearer [Token]
     const authHeader = req.header('Authorization');
-    if (!authHeader) {
-        return res.status(403).json({ error: 'Access Denied: No Token Provided' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(403).json({ error: 'Access Denied: No Bearer Token Provided' });
     }
 
     // 2. แยก Token ออกจาก "Bearer "
     const token = authHeader.split(' ')[1];
-    if (!token) {
-        return res.status(403).json({ error: 'Access Denied: Invalid Token Format' });
-    }
-
+    
+    // ไม่จำเป็นต้องตรวจสอบ token อีกครั้ง เพราะถูกตรวจสอบใน startsWith('Bearer ') แล้ว
+    
     try {
         // 3. ยืนยัน Token (Verify)
         const verified = jwt.verify(token, JWT_SECRET);
@@ -29,3 +33,6 @@ exports.verifyToken = (req, res, next) => {
         return res.status(401).json({ error: 'Invalid Token or Token Expired' });
     }
 };
+// เราเปลี่ยนชื่อฟังก์ชันใน routes/dga.route.js เป็น authMiddleware
+// แต่ถ้าฟังก์ชันหลักคือ verifyToken เราควร export มันออกมาเพื่อใช้ใน routes
+export const authMiddleware = verifyToken;

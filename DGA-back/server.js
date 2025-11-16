@@ -1,40 +1,39 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+// DGA-back/server.js
+// เปลี่ยนจาก require เป็น import ทั้งหมดเพื่อรองรับ ES Module ("type": "module" ใน package.json)
+
+import express from 'express';
+import cors from 'cors'; 
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 // โหลดตัวแปรสภาพแวดล้อมจาก .env
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+// ใช้ port จาก .env หรือ default เป็น 1040 (ตามที่กำหนดใน docker-compose)
+const port = process.env.PORT || 1040; 
 const mongoUri = process.env.MONGO_URI;
 
 // ----------------------------------------------------
 // 1. การตั้งค่า CORS ที่ยืดหยุ่น
 // ----------------------------------------------------
-// สำหรับ Dev: http://localhost:8083 (หรือพอร์ตอื่นที่ใช้รัน Vite)
-// สำหรับ Prod: https://czp-staging.biza.me (หรือโดเมนจริง)
+// สำหรับ Dev/Prod
 const allowedOrigins = [
     'http://localhost:8083', 
-    'http://localhost:5174', // สำหรับกรณีที่รัน Vite Dev Server บนพอร์ต default 
-    'https://czp-staging.biza.me' // โดเมน Staging ของคุณ
+    'http://localhost:5174', 
+    'https://czp-staging.biza.me' 
 ];
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // อนุญาตถ้า origin อยู่ใน allowedOrigins หรือถ้าเป็น Request ที่ไม่มี origin (เช่น Postman, cURL)
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
         }
     },
-    // อนุญาตให้ส่ง Credentials (เช่น Cookies, Authorization Headers)
     credentials: true, 
-    // อนุญาต Methods และ Headers ที่จำเป็น
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    // ⭐️ สำคัญ: ต้องระบุ Header ที่ใช้เอง (เช่น ConsumerSecret) ที่นี่
     allowedHeaders: ['Content-Type', 'Authorization', 'ConsumerSecret'], 
 };
 
@@ -42,23 +41,30 @@ app.use(cors(corsOptions));
 // ----------------------------------------------------
 
 // Middleware พื้นฐาน
-app.use(express.json()); // สำหรับการจัดการ JSON Request Body
+app.use(express.json()); 
 
 // ----------------------------------------------------
 // 2. เชื่อมต่อฐานข้อมูล MongoDB
 // ----------------------------------------------------
+// ตรวจสอบว่ามี URI ไหมก่อน connect
+if (!mongoUri) {
+    console.error('❌ FATAL ERROR: MONGO_URI is not defined in environment variables.');
+    // ไม่ควรให้เซิร์ฟเวอร์รันต่อถ้าไม่มี DB
+    process.exit(1);
+}
+
 mongoose.connect(mongoUri)
     .then(() => console.log('✅ MongoDB connection successful.'))
     .catch(err => {
         console.error('❌ MongoDB connection error:', err.message);
-        // ไม่ควรให้เซิร์ฟเวอร์รันต่อถ้าไม่มี DB
         process.exit(1);
     });
 
 // ----------------------------------------------------
 // 3. กำหนด Routes
 // ----------------------------------------------------
-const dgaRoutes = require('./routes/dga.route'); 
+// ⭐️ สำคัญ: ต้องใช้ import และต้องระบุ .js extension
+import dgaRoutes from './routes/dga.route.js'; 
 app.use('/api', dgaRoutes); // ใช้ /api เป็น Prefix สำหรับ API ของคุณ
 
 // Route ทดสอบ
@@ -83,11 +89,3 @@ app.listen(port, () => {
     console.log(`🚀 Server listening at http://localhost:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
-// ----------------------------------------------------
-// 5. การใช้ Port จาก .env ใน Frontend (เพื่อให้ Frontend เรียกได้ถูก Port)
-// ----------------------------------------------------
-/*
-ในไฟล์ src/services/AuthService.js:
-const API_BASE_URL = 'http://localhost:1040'; // ต้องตรงกับ Port ใน .env
-*/

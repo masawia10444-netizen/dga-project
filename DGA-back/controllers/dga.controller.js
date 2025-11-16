@@ -1,18 +1,18 @@
-const authService = require('../services/auth.service'); // ใช้ Service Layer ใหม่
+import * as authService from '../services/auth.service.js'; 
 
 /**
  * @desc รับ ConsumerKey และ AgentID จาก Query, ConsumerSecret จาก Header
  * เพื่อทำการตรวจสอบสิทธิ์และสร้าง Access Token
  * @route GET /auth/validate?ConsumerKey=[KEY]&AgentID=[ID]
  */
-exports.getAccessToken = async (req, res) => {
+export const getAccessToken = async (req, res) => { // ใช้ export const แทน exports.
     try {
         // 1. รับค่า Input (ตรวจสอบจากภาพ: Consumer-Key, AgentID, ConsumerSecret)
-        const consumerKey = req.query['Consumer-Key']; // Case-sensitive (ใช้ชื่อตามภาพ)
+        const consumerKey = req.query['Consumer-Key']; 
         const agentId = req.query.AgentID;
-        const consumerSecret = req.header('ConsumerSecret');
-        const contentType = req.header('Content-Type'); // ไม่ได้ใช้ในการประมวลผล แต่ควรรับไว้
-
+        // NOTE: req.header() ใช้ได้ดีกว่า req.headers['consumersecret'] เพราะจัดการเรื่อง Case-insensitivity ได้ง่ายกว่า
+        const consumerSecret = req.header('ConsumerSecret'); 
+        
         // 2. ตรวจสอบ Input เบื้องต้น (Validation)
         if (!consumerKey || !agentId || !consumerSecret) {
             return res.status(400).json({
@@ -27,11 +27,10 @@ exports.getAccessToken = async (req, res) => {
             consumerSecret
         );
 
-        // 4. ส่ง Response กลับตามรูปแบบที่ระบุในภาพ
+        // 4. ส่ง Response กลับ
         if (accessToken) {
             return res.status(200).json({
                 Result: accessToken,
-                // เพิ่ม message ตามที่เห็นใน Response: Stats successfully retrieved.
                 message: 'Stats successfully retrieved.' 
             });
         } else {
@@ -42,10 +41,19 @@ exports.getAccessToken = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Authentication Error:', error);
+        console.error('Authentication Error in Controller:', error);
         // การจัดการ Error ภายใน (เช่น ฐานข้อมูลล่ม, Server Error)
         return res.status(500).json({ 
             error: 'Internal Server Error' 
         });
     }
 };
+
+// ⭐️ เพิ่ม export สำหรับฟังก์ชันอื่น ๆ ที่เกี่ยวข้องใน Controller (ถ้ามี)
+export const login = (req, res) => { 
+    return res.status(501).json({ error: 'Not Implemented Yet' }); 
+};
+
+export const getProtectedData = (req, res) => {
+    return res.status(200).json({ data: 'This is protected data.' });
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 // ⭐️ แก้ไขให้เรียกใช้ DGAProductionFlow.jsx (หรือชื่อไฟล์ที่คุณใช้จริง)
-import DGAProductionFlow from './components/DGAProductionFlow.jsx'; 
+import DGAProductionFlow from '../components/DGAProductionFlow.jsx';
 import './index.css';
 
 function App() {

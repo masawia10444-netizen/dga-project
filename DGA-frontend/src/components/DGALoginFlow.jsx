@@ -4,12 +4,15 @@ import axios from 'axios';
 
 // ⭐️ สร้าง Axios Instance นอก Component เพื่อป้องกันการสร้างซ้ำ
 const api = axios.create({
+    // ใช้ Base URL /api ซึ่งจะถูก Proxy ไปยัง Backend (Port 1040)
     baseURL: '/api', 
+    // สำคัญ: ตั้งค่า withCredentials: true เพื่อให้ Session Cookie ทำงานได้
     withCredentials: true, 
     timeout: 15000,
 });
 
-const DGA_APP_ID = 'YOUR_DGA_APP_ID'; // ใช้ค่า App ID จริงของคุณ
+// ⭐️ ค่า App ID จริง (สามารถดึงจาก ENV ได้หากต้องการ)
+const DGA_APP_ID = 'YOUR_DGA_APP_ID'; 
 
 function DGALoginFlow() {
     const [user, setUser] = useState(null);
@@ -23,12 +26,12 @@ function DGALoginFlow() {
     // ------------------------------------------
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const sdk = window.czpSdk; // ⭐️ ดึง DGA SDK (ถ้ามี)
+        const sdk = window.czpSdk; // ดึง DGA SDK Object (ถ้ามีการโหลด script ใน index.html)
 
-        // ⭐️⭐️ การผสาน Logic: ดึง mToken จาก SDK ก่อน, ถ้าไม่มีจึงดึงจาก URL
-        const tokenFromSdkOrUrl = (sdk && sdk.getToken?.()) || params.get('mToken'); 
-        
-        // ⭐️⭐️ ตรวจสอบ Session Function ⭐️⭐️
+        // ⭐️⭐️ Logic การผสาน: ดึง mToken จาก SDK ก่อน, ถ้าไม่มีจึงดึงจาก URL ⭐️⭐️
+        const mTokenValue = (sdk && sdk.getToken?.()) || params.get('mToken'); 
+
+        // ⭐️⭐️ Function ตรวจสอบ Session ⭐️⭐️
         async function checkSession() {
             try {
                 const response = await api.get('/get-user-data');
@@ -38,14 +41,17 @@ function DGALoginFlow() {
                 console.log('No active user session.');
                 setUser(null);
             }
-        };
+        }
 
-        // ⭐️⭐️ Logic การตั้งค่า mToken และตรวจสอบ Session ⭐️⭐️
-        if (tokenFromSdkOrUrl) {
-            setMToken(tokenFromSdkOrUrl);
-            console.log('✅ mToken found via SDK or URL:', tokenFromSdkOrUrl);
+        // ⭐️⭐️ Logic การตั้งค่า mToken และตรวจสอบ ⭐️⭐️
+        if (mTokenValue) {
+            setMToken(mTokenValue);
+            console.log('✅ mToken found via SDK or URL.');
             
-            // หากพบ mToken แล้ว อาจจะอยากเริ่ม Login Flow ทันทีที่นี่ (แต่เราจะใช้ปุ่ม)
+            // หากพบ mToken และมี SDK อาจเรียกฟังก์ชัน SDK เพื่อตั้งค่า UI
+            if (sdk && sdk.setTitle) {
+                 sdk.setTitle("DGA Connect App", true);
+            }
         } else {
             console.log('No mToken found. Checking active session...');
             checkSession(); 
@@ -57,7 +63,7 @@ function DGALoginFlow() {
     // ------------------------------------------
     const handleLoginFlow = async () => {
         if (!mToken) {
-            setError("Cannot start flow: mToken is missing. Check the DGA redirect URL.");
+            setError("Cannot start flow: mToken is missing. Check the DGA redirect URL or SDK loading.");
             return;
         }
 
@@ -91,7 +97,7 @@ function DGALoginFlow() {
     };
 
     // ------------------------------------------
-    // 3. Render UI (ปรับปรุงการแสดงผล)
+    // 3. Render UI (การแสดงผล)
     // ------------------------------------------
     return (
         <div className="dga-login-flow-container p-6 bg-white rounded-lg shadow-xl max-w-md w-full">

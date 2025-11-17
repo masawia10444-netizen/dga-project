@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// ตั้งค่า axios instance สำหรับการเรียก API
+// ⭐️ สร้าง Axios Instance นอก Component เพื่อป้องกันการสร้างซ้ำ
 const api = axios.create({
     baseURL: '/api', 
     withCredentials: true, 
@@ -19,20 +19,16 @@ function DGALoginFlow() {
     const [error, setError] = useState(null);
 
     // ------------------------------------------
-    // 1. ดึง mToken จาก URL Query และตรวจสอบ Session
+    // 1. ดึง mToken จาก SDK หรือ URL Query และตรวจสอบ Session
     // ------------------------------------------
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const urlMToken = params.get('mToken');
+        const sdk = window.czpSdk; // ⭐️ ดึง DGA SDK (ถ้ามี)
 
-        if (urlMToken) {
-            setMToken(urlMToken);
-            console.log('✅ mToken found in URL:', urlMToken);
-        } else {
-            console.log('No mToken found in URL. Checking active session...');
-            checkSession(); 
-        }
-
+        // ⭐️⭐️ การผสาน Logic: ดึง mToken จาก SDK ก่อน, ถ้าไม่มีจึงดึงจาก URL
+        const tokenFromSdkOrUrl = (sdk && sdk.getToken?.()) || params.get('mToken'); 
+        
+        // ⭐️⭐️ ตรวจสอบ Session Function ⭐️⭐️
         async function checkSession() {
             try {
                 const response = await api.get('/get-user-data');
@@ -43,6 +39,17 @@ function DGALoginFlow() {
                 setUser(null);
             }
         };
+
+        // ⭐️⭐️ Logic การตั้งค่า mToken และตรวจสอบ Session ⭐️⭐️
+        if (tokenFromSdkOrUrl) {
+            setMToken(tokenFromSdkOrUrl);
+            console.log('✅ mToken found via SDK or URL:', tokenFromSdkOrUrl);
+            
+            // หากพบ mToken แล้ว อาจจะอยากเริ่ม Login Flow ทันทีที่นี่ (แต่เราจะใช้ปุ่ม)
+        } else {
+            console.log('No mToken found. Checking active session...');
+            checkSession(); 
+        }
     }, []);
 
     // ------------------------------------------
@@ -64,7 +71,7 @@ function DGALoginFlow() {
             validatedToken = validateResponse.data.token;
             setToken(validatedToken);
 
-            // B. STEP 2: ใช้ Token และ mToken ที่ดึงจาก URL เพื่อขอข้อมูลผู้ใช้ (Login)
+            // B. STEP 2: ใช้ Token และ mToken ที่ดึงจาก URL/SDK เพื่อขอข้อมูลผู้ใช้ (Login)
             const loginResponse = await api.post('/login', {
                 appId: DGA_APP_ID,
                 mToken: mToken,
@@ -110,12 +117,11 @@ function DGALoginFlow() {
                     )}
                     {!mToken && !loading && (
                          <div className="mt-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                            ไม่พบ mToken ใน URL: DGA API ต้องทำการ Redirect มาที่หน้านี้พร้อม Query Parameter 'mToken'
+                            ไม่พบ mToken: DGA API ต้องทำการ Redirect มาที่หน้านี้พร้อม Query Parameter 'mToken' หรือต้องโหลด DGA SDK
                         </div>
                     )}
                 </>
             ) : (
-                // ⭐️ โค้ดแสดงข้อมูลผู้ใช้เมื่อสำเร็จ (แก้ไข syntax ในส่วนนี้)
                 <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-800 rounded">
                     <h3 className="text-lg font-bold mb-2">✅ เข้าสู่ระบบสำเร็จ</h3>
                     <p>ชื่อ: **{user.citizenName || 'N/A'}**</p>

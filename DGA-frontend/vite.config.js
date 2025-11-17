@@ -2,8 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  
-  base: '/test5/', // ⭐️ แก้ไข: ต้องมี / ปิดท้าย
+  base: '/test5/',
 
   plugins: [
     react({
@@ -12,15 +11,22 @@ export default defineConfig({
       },
     }),
   ],
-  
-  // LAST UPDATE 14-NOV
 
   server: {
     port: 5174,
     allowedHosts: ['czp-staging.biza.me'],
 
     watch: {
-        usePolling: true,
-    }
-  }
+      usePolling: true,
+    },
+
+    // ⭐⭐⭐ เพิ่ม Proxy เพื่อแก้ปัญหา 502 ⭐⭐⭐
+    proxy: {
+      '/api': {
+        target: 'http://backend:1040',  // ← backend service จาก docker-compose
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

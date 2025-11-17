@@ -1,7 +1,6 @@
-// src/App.jsx
 import React from 'react';
-// ⭐️⭐️ เปลี่ยนไปเรียก Component ใหม่ ⭐️⭐️
-import DGAProductionFlow from './components/DGALoginFlow';
+// ⭐️ แก้ไขให้เรียกใช้ DGAProductionFlow.jsx (หรือชื่อไฟล์ที่คุณใช้จริง)
+import DGAProductionFlow from './components/DGAProductionFlow.jsx'; 
 import './index.css';
 
 function App() {

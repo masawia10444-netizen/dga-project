@@ -1,18 +1,25 @@
+// routes/dga.route.js (เพิ่ม)
 import express from 'express';
 const router = express.Router();
+import { 
+    handleValidate, 
+    handleLogin, 
+    handleNotification, 
+    handleGetUserData,
+    handleLogout // 👈 นำเข้า handleLogout
+} from '../controllers/dga.controller.js'; 
+import { isAuthenticated } from '../middleware/auth.middleware.js'; // 👈 นำเข้า isAuthenticated
 
-// ⭐️ Named Import: ดึงฟังก์ชันที่ต้องการจาก Controller มาโดยตรง
-import { getAccessToken, getDGAData } from '../controllers/dga.controller.js';
+// Route DGA API
+router.get("/validate", handleValidate);
+router.post("/login", handleLogin);
+// ใช้ Middleware ตรวจสอบก่อนเข้าถึง Notification
+router.post("/notification", isAuthenticated, handleNotification); 
 
-// ⭐️ Named Import: ดึงฟังก์ชัน Middleware ที่ต้องการมาโดยตรง
-import { verifyToken } from '../middleware/auth.middleware.js'; 
+// Route สำหรับดึงข้อมูล Session
+router.get("/get-user-data", handleGetUserData);
 
-// 1. Route สำหรับขอ Token (ไม่ต้องมี Middleware)
-// เรียกใช้ฟังก์ชันโดยตรง
-router.get('/auth/validate', getAccessToken);
-
-// 2. Route ที่ต้องมีการยืนยันตัวตน (มี Middleware)
-// เรียกใช้ฟังก์ชันโดยตรง
-router.get('/dga/data', verifyToken, getDGAData); 
+// 👈 เพิ่ม Route สำหรับ Logout
+router.post("/logout", handleLogout); 
 
 export default router;

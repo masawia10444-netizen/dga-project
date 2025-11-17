@@ -1,38 +1,23 @@
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET;
+// middleware/auth.middleware.js (Session-based)
 
 /**
- * Middleware: ยืนยัน JWT Access Token
+ * Middleware: ตรวจสอบว่าผู้ใช้เข้าสู่ระบบแล้วหรือไม่ (มีข้อมูลใน Session)
  * @param {object} req 
  * @param {object} res 
  * @param {function} next 
  */
-export const verifyToken = (req, res, next) => { // ⭐️ ใช้ export const เพื่อให้เข้ากับ ES Module
-    // 1. ตรวจสอบว่ามี Token ใน Header: Authorization: Bearer [Token]
-    const authHeader = req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(403).json({ error: 'Access Denied: No Bearer Token Provided' });
-    }
-
-    // 2. แยก Token ออกจาก "Bearer "
-    const token = authHeader.split(' ')[1];
-    
-    // ไม่จำเป็นต้องตรวจสอบ token อีกครั้ง เพราะถูกตรวจสอบใน startsWith('Bearer ') แล้ว
-    
-    try {
-        // 3. ยืนยัน Token (Verify)
-        const verified = jwt.verify(token, JWT_SECRET);
-        
-        // 4. เก็บข้อมูล Payload ไว้ใน Request สำหรับใช้ใน Controller
-        req.user = verified; 
-        
-        next(); // ไปยัง Controller ถัดไป
-    } catch (err) {
-        // Token หมดอายุ หรือไม่ถูกต้อง
-        return res.status(401).json({ error: 'Invalid Token or Token Expired' });
+export const isAuthenticated = (req, res, next) => {
+    // 1. ตรวจสอบว่ามี object 'user' ใน session หรือไม่
+    // ข้อมูลนี้ถูกบันทึกไว้ใน dga.controller.js หลังจากเรียก /api/login สำเร็จ
+    if (req.session && req.session.user) {
+        // ถ้ามี: อนุญาตให้ไปต่อ
+        next();
+    } else {
+        // ถ้าไม่มี: ส่งสถานะ 401 Unauthorized กลับไป
+        console.log('🛑 Access Denied: User not authenticated (No active session).');
+        res.status(401).json({ 
+            success: false, 
+            message: 'Unauthorized. Please login first or session expired.' 
+        });
     }
 };
-// เราเปลี่ยนชื่อฟังก์ชันใน routes/dga.route.js เป็น authMiddleware
-// แต่ถ้าฟังก์ชันหลักคือ verifyToken เราควร export มันออกมาเพื่อใช้ใน routes
-export const authMiddleware = verifyToken;

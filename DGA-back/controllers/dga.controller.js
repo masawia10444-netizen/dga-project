@@ -1,59 +1,107 @@
-import * as authService from '../services/auth.service.js'; 
+// controllers/dga.controller.js
+// ใช้ * as เพื่อนำเข้าทั้งหมดที่เป็น Named export
+import * as dgaService from '../services/dga.service.js'; 
+import { logoutUser } from '../services/auth.service.js';
 
-/**
- * @desc รับ ConsumerKey และ AgentID จาก Query, ConsumerSecret จาก Header
- * เพื่อทำการตรวจสอบสิทธิ์และสร้าง Access Token
- * @route GET /auth/validate?ConsumerKey=[KEY]&AgentID=[ID]
- */
-export const getAccessToken = async (req, res) => { // ใช้ export const แทน exports.
+// 1. Controller สำหรับ /api/validate
+export const handleValidate = async (req, res) => { // ใช้ export const แทน exports.handleValidate = 
     try {
-        // 1. รับค่า Input (ตรวจสอบจากภาพ: Consumer-Key, AgentID, ConsumerSecret)
-        const consumerKey = req.query['Consumer-Key']; 
-        const agentId = req.query.AgentID;
-        // NOTE: req.header() ใช้ได้ดีกว่า req.headers['consumersecret'] เพราะจัดการเรื่อง Case-insensitivity ได้ง่ายกว่า
-        const consumerSecret = req.header('ConsumerSecret'); 
-        
-        // 2. ตรวจสอบ Input เบื้องต้น (Validation)
-        if (!consumerKey || !agentId || !consumerSecret) {
-            return res.status(400).json({
-                error: 'Missing required parameters: Consumer-Key, AgentID, and ConsumerSecret are required.'
-            });
-        }
+        const token = await dgaService.validateToken();
 
-        // 3. ส่งต่อให้ Service Layer จัดการ Business Logic
-        const accessToken = await authService.validateAndGenerateToken(
-            consumerKey,
-            agentId,
-            consumerSecret
-        );
-
-        // 4. ส่ง Response กลับ
-        if (accessToken) {
-            return res.status(200).json({
-                Result: accessToken,
-                message: 'Stats successfully retrieved.' 
-            });
-        } else {
-            // กรณี Service Layer แจ้งว่า validation ไม่ผ่าน
-            return res.status(401).json({ 
-                error: 'Authentication failed. Invalid credentials.'
-            });
-        }
-
-    } catch (error) {
-        console.error('Authentication Error in Controller:', error);
-        // การจัดการ Error ภายใน (เช่น ฐานข้อมูลล่ม, Server Error)
-        return res.status(500).json({ 
-            error: 'Internal Server Error' 
+        res.json({
+            success: true,
+            token: token,
+        });
+    } catch (err) {
+        console.error("💥 Validate Error:", err.response?.data || err.message);
+        res.status(500).json({
+            success: false,
+            message: "การ Validate token ล้มเหลว",
+            error: err.response?.data || err.message,
         });
     }
 };
 
-// ⭐️ เพิ่ม export สำหรับฟังก์ชันอื่น ๆ ที่เกี่ยวข้องใน Controller (ถ้ามี)
-export const login = (req, res) => { 
-    return res.status(501).json({ error: 'Not Implemented Yet' }); 
+// 2. Controller สำหรับ /api/login
+export const handleLogin = async (req, res) => { // ใช้ export const แทน exports.handleLogin = 
+    try {
+        const { appId, mToken, token } = req.body;
+
+        if (!appId || !mToken || !token) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Missing appId, mToken, or token in request body" 
+            });
+        }
+        
+        const user = await dgaService.getUserData(appId, mToken, token);
+        
+        req.session.user = user;
+        console.log('✅ User data stored in session.');
+
+        res.json({
+            success: true,
+            message: "ดึงข้อมูลจาก CZP สำเร็จ",
+            user,
+        });
+    } catch (err) {
+        console.error("💥 Login Error:", err.response?.data || err.message);
+        res.status(500).json({
+            success: false,
+            message: "เกิดข้อผิดพลาดในการเชื่อมต่อกับ CZP",
+            error: err.response?.data || err.message,
+        });
+    }
 };
 
-export const getProtectedData = (req, res) => {
-    return res.status(200).json({ data: 'This is protected data.' });
-}
+// 3. Controller สำหรับ /api/notification
+export const handleNotification = async (req, res) => { // ใช้ export const แทน exports.handleNotification = 
+    try {
+        const { appId, userId, token, message, sendDateTime } = req.body;
+
+        if (!appId || !userId || !token) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing appId, userId, or token in request body",
+            });
+        }
+
+        const result = await dgaService.pushNotification(
+            appId, userId, token, message, sendDateTime
+        );
+
+        res.json({
+            success: true,
+            message: "ส่ง Notification สำเร็จ",
+            result,
+        });
+    } catch (err) {
+        console.error("💥 Notification Error:", err.response?.data || err.message);
+        res.status(500).json({
+            success: false,
+            message: "เกิดข้อผิดพลาดในการส่ง Notification",
+            error: err.response?.data || err.message,
+        });
+    }
+};
+
+// 4. Controller สำหรับ /api/get-user-data
+export const handleGetUserData = (req, res) => { // ใช้ export const แทน exports.handleGetUserData = 
+    if (req.session.user) {
+        res.json(req.session.user);
+    } else {
+        res.status(401).json({ error: 'Unauthorized. No session data found.' });
+    }
+};
+
+export const handleLogout = async (req, res) => {
+    try {
+        await logoutUser(req);
+        // ล้าง Cookie (connect.sid คือชื่อ default ของ session cookie)
+        res.clearCookie('connect.sid'); 
+        res.json({ success: true, message: 'Logout successful.' });
+    } catch (err) {
+        console.error("💥 Logout Error:", err.message);
+        res.status(500).json({ success: false, message: 'Failed to securely logout.', error: err.message });
+    }
+};

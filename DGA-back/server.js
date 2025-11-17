@@ -1,64 +1,52 @@
-// services/dga.service.js (ปรับปรุงแล้ว)
-import axios from 'axios';
-import 'dotenv/config'; 
+// server.js 
+import express from 'express';
+import session from 'express-session';
+import cors from 'cors';
+import 'dotenv/config'; // โหลดตัวแปร ENV ตั้งแต่เริ่มต้น
 
-// สร้าง Axios Instance
-const axiosInstance = axios.create({
-    timeout: 10000,
+// 🚨 นำเข้า Route ที่เราได้สร้างและ export default ไว้ใน dga.route.js
+import dgaRoutes from './routes/dga.route.js'; 
+
+const app = express();
+// ใช้ Port 1040 ตาม .env หรือค่า default
+const PORT = process.env.PORT || 1040; 
+
+// --- Middleware Setup ---
+// อนุญาตให้ Frontend (CORS) เข้าถึงได้ และอนุญาตให้ส่ง Cookie (Session) ข้ามโดเมนได้
+app.use(cors({ origin: true, credentials: true })); 
+app.use(express.json());
+
+// ตั้งค่า Session (สำคัญสำหรับ Session-based Auth)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'a-very-strong-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // ใช้ Secure Cookie ใน Production
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60 // 1 ชั่วโมง
+    }
+}));
+
+console.log("🔧 Server Setup Complete.");
+
+
+// --- Routes Setup ---
+// ⭐️ เชื่อมต่อ dgaRoutes โดยมี base path เป็น /api
+app.use('/api', dgaRoutes); 
+
+// Endpoint ทดสอบสถานะเซิร์ฟเวอร์
+app.get('/', (req, res) => {
+    res.send({ status: 'Server is running', api_path: '/api/validate' });
 });
 
-const DGA_API = {
-    // ใช้ URL ตามภาพที่คุณส่งมา
-    VALIDATE: 'https://api.egov.go.th/ws/auth/validate',
-    // ... URLs อื่น ๆ (CZP_LOGIN, NOTIFICATION) ที่อาจมีในไฟล์นี้
-};
 
-// --- ดึงค่า ENV ---
-// AGENT_ID, CONSUMER_KEY, CONSUMER_SECRET ถูกกำหนดเป็น Required ตามภาพ
-const { AGENT_ID, CONSUMER_KEY, CONSUMER_SECRET } = process.env;
-if (!AGENT_ID || !CONSUMER_KEY || !CONSUMER_SECRET) {
-    // ปรับปรุงการแจ้งเตือนให้ชัดเจนขึ้น
-    throw new Error('💥 ERROR: Missing Required DGA environment variables (AGENT_ID, CONSUMER_KEY, CONSUMER_SECRET) in .env file.');
-}
-
-/**
- * 🚀 Logic สำหรับการขอ Access Token (Validate) จาก DGA
- * * @returns {string} Access Token สำหรับใช้เรียก API DGA อื่นๆ
- * @throws {Error} หากการเรียก API ล้มเหลวหรือ Token ไม่ถูกต้อง
- */
-export async function validateToken() { 
-    console.log("🔗 Requesting Access Token from DGA Validate API...");
-
-    // 1. สร้าง URL พร้อม Query Parameters (ConsumerSecret และ AgentID)
-    // ใช้ mToken ที่ถูกส่งมาจาก landing url (ถ้ามี) แทน AgentID ตามคำอธิบาย
-    // แต่เพื่อความสอดคล้องกับโค้ดเดิมและภาพ API (ที่แสดง AgentID) จะใช้ AGENT_ID จาก .env
-    const url = `${DGA_API.VALIDATE}?ConsumerSecret=${CONSUMER_SECRET}&AgentID=${AGENT_ID}`;
-
-    try {
-        // 2. เรียก API ด้วย Axios
-        const response = await axiosInstance.get(url, {
-            headers: {
-                // Consumer-Key ถูกส่งใน Header
-                "Consumer-Key": CONSUMER_KEY, 
-                "Content-Type": "application/json",
-            },
-        });
-        
-        // 3. ตรวจสอบ Response Data (ตามภาพ Response คือมี Key ชื่อ "Result")
-        if (!response.data || !response.data.Result) {
-            // โยน Error หาก Response ไม่มี Key "Result" หรือ Response ไม่เป็นไปตามที่คาด
-            throw new Error(`Invalid or missing Token 'Result' in DGA Response. Status: ${response.status}`);
-        }
-
-        console.log("✅ DGA Validate Success. Token retrieved.");
-        return response.data.Result; // คืนค่า Access Token
-        
-    } catch (error) {
-        // จัดการและส่ง Error กลับไปยัง Controller
-        const errorData = error.response?.data || { message: error.message };
-        console.error("💥 DGA Validate Error details:", errorData);
-        // โยน Error ที่ชัดเจนกว่าเดิม
-        throw new Error(`DGA API Validation failed: ${JSON.stringify(errorData)}`);
+// --- Start Server ---
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    
+    // ตรวจสอบสถานะ ENV DGA คร่าวๆ (ตรวจสอบแบบเข้มงวดอยู่ใน dga.service.js แล้ว)
+    if (!process.env.AGENT_ID || !process.env.CONSUMER_KEY || !process.env.CONSUMER_SECRET) {
+        console.warn("⚠️ WARNING: DGA credentials check is done in dga.service.js. Ensure your .env is correct.");
     }
-}
-
+});
